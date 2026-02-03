@@ -343,7 +343,7 @@ MIT License - feel free to use this project for your own portfolio or commercial
 <p align="center">
   <strong>Built with 💙 by Jordan Leturgez</strong><br>
   <a href="https://grabify.link/MBS9DP">Portfolio</a> • 
-  <a href="https://www.linkedin.com/in/jordan-leturgez-832511101/">LinkedIn</a> • 
+  <a href="https://www.linkedin.com/in/jordan-leturgez-832511101/">LinkedIn</a>
 </p>
 
 ---
