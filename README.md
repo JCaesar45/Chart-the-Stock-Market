@@ -18,8 +18,7 @@
 
 ## 🚀 Live Demo
 
-**[View Live Demo](https://codepen.io/JCaesar45/full/bNeKRRJ)** *(Replace with your deployed URL)*
-
+**[View Live Demo](https://codepen.io/JCaesar45/full/bNeKRRJ)**
 <p align="center">
   <img src="demo-screenshot.png" alt="StockSync Dashboard" width="800px" />
 </p>
