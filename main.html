@@ -1,0 +1,139 @@
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StockSync | Real-Time Market Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
+
+</head>
+
+<body class="min-h-screen">
+  <div class="bg-grid"></div>
+
+  <!-- Navigation -->
+  <nav class="glass sticky top-0 z-50 px-6 py-4 border-b border-white/10">
+    <div class="max-w-7xl mx-auto flex justify-between items-center">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-2xl font-bold tracking-tighter neon-text">STOCKSYNC</h1>
+          <p class="text-xs text-gray-400 mono">REAL-TIME MARKET DATA</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <div id="connectionStatus" class="connection-status disconnected px-4 py-2 rounded-full text-sm mono flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-current live-pulse"></span>
+          <span>Disconnected</span>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Stock Ticker -->
+  <div class="glass border-b border-white/10 py-2 overflow-hidden">
+    <div class="ticker-wrap">
+      <div class="ticker mono text-sm" id="tickerContent">
+        <span class="text-gray-400">Loading market data...</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="max-w-7xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
+    <!-- Sidebar - Stock Controls -->
+    <div class="lg:col-span-1 space-y-6">
+      <!-- Add Stock Form -->
+      <div class="glass-panel rounded-2xl p-6 neon-border">
+        <h2 class="text-lg font-bold mb-4 flex items-center gap-2">
+          <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+          Add Stock
+        </h2>
+        <form id="addStockForm" class="space-y-3">
+          <div class="relative">
+            <input type="text" id="stockInput" placeholder="e.g., AAPL" class="w-full bg-black/30 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none input-glow transition-all uppercase mono" maxlength="5" autocomplete="off">
+            <div class="absolute right-3 top-3 text-xs text-gray-500 mono">NASDAQ</div>
+          </div>
+          <button type="submit" class="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold py-3 rounded-xl transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-cyan-500/25">
+            Track Stock
+          </button>
+        </form>
+        <div id="errorMessage" class="mt-3 text-red-400 text-sm hidden mono"></div>
+      </div>
+
+      <!-- Active Stocks List -->
+      <div class="glass-panel rounded-2xl p-6">
+        <h2 class="text-lg font-bold mb-4 flex items-center gap-2">
+          <svg class="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
+          Watchlist
+        </h2>
+        <div id="stockList" class="space-y-3 max-h-[400px] overflow-y-auto">
+          <div class="text-gray-500 text-center py-8 text-sm">
+            No stocks tracked yet
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="glass-panel rounded-2xl p-6">
+        <div class="grid grid-cols-2 gap-4">
+          <div class="text-center">
+            <div class="text-2xl font-bold text-cyan-400 mono" id="totalStocks">0</div>
+            <div class="text-xs text-gray-400">Stocks</div>
+          </div>
+          <div class="text-center">
+            <div class="text-2xl font-bold text-purple-400 mono" id="activeUsers">1</div>
+            <div class="text-xs text-gray-400">Viewers</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Chart Area -->
+    <div class="lg:col-span-3">
+      <div class="glass-panel rounded-2xl p-6 h-full">
+        <div class="flex justify-between items-center mb-6">
+          <div>
+            <h2 class="text-2xl font-bold">Market Trends</h2>
+            <p class="text-sm text-gray-400 mt-1">Real-time comparison of tracked securities</p>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="chartInstance.timeRange('1D')" class="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-sm transition-colors mono">1D</button>
+            <button onclick="chartInstance.timeRange('1W')" class="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-sm transition-colors mono">1W</button>
+            <button onclick="chartInstance.timeRange('1M')" class="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-sm transition-colors mono">1M</button>
+            <button onclick="chartInstance.timeRange('1Y')" class="px-4 py-2 rounded-lg bg-cyan-500/20 text-cyan-400 border border-cyan-500/50 text-sm mono">1Y</button>
+          </div>
+        </div>
+
+        <div class="chart-container">
+          <canvas id="stockChart"></canvas>
+        </div>
+
+        <!-- Legend -->
+        <div id="chartLegend" class="mt-4 flex flex-wrap gap-4 justify-center"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-6 right-6 transform translate-y-20 opacity-0 transition-all duration-300 z-50">
+    <div class="glass-panel rounded-xl px-6 py-4 border border-cyan-500/30 flex items-center gap-3">
+      <div class="w-2 h-2 bg-cyan-400 rounded-full live-pulse"></div>
+      <span id="toastMessage" class="text-sm font-medium">Notification</span>
+    </div>
+  </div>
+
+</body>
+
+</html>
